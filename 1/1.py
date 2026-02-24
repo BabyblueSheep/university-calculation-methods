@@ -5,6 +5,7 @@ import requests
 
 from typing import Final
 
+from matplotlib.pyplot import tight_layout
 
 
 class CubicSpline:
@@ -84,7 +85,6 @@ class CubicSpline:
 
         return x, y
 
-
 class GeographicPosition:
     """Represents a position on Earth using a geographic coordinate system."""
 
@@ -116,7 +116,7 @@ class GeographicPosition:
 
 
 
-figure, axes = plot.subplots(nrows=1, ncols=2, constrained_layout=True)
+figure, axes = plot.subplots(nrows=1, ncols=2, tight_layout=True)
 
 
 url = "https://api.open-elevation.com/api/v1/lookup?locations=48.164214,24.536044|48.164983,24.534836|48.165605,24.534068|48.166228,24.532915|48.166777,24.531927|48.167326,24.530884|48.167011,24.530061|48.166053,24.528039|48.166655,24.526064|48.166497,24.523574|48.166128,24.520214|48.165416,24.517170|48.164546,24.514640|48.163412,24.512980|48.162331,24.511715|48.162015,24.509462|48.162147,24.506932|48.161751,24.504244|48.161197,24.501793|48.160580,24.500537|48.160250,24.500106"
@@ -137,9 +137,6 @@ distances_meters: list[float] = [0]
 for i in range(1, len(points)):
     distances_meters.insert(i, distances_meters[i - 1] + GeographicPosition.haversine_distance_kilometers(points[i], points[i - 1]))
 
-axes[0].plot(distances_meters, [point.elevation / 1000 for point in points])
-
-
 # Print information about route
 print(f"Total distance of route: {distances_meters[-1]} km")
 
@@ -157,24 +154,58 @@ energy = mass_kilograms * 9.81 * total_ascent
 print(f"Total energy used during ascent: {energy / 1000} kJ")
 print(f"Total energy used during ascent: {energy / 4184} calories")
 
-# Calculate a cubic spline from sample points
-projected_positions = [point.project_mercator() for point in points]
-x_positions = [position[0] for position in projected_positions]
-y_positions = [position[1] for position in projected_positions]
-
+# Calculate a cubic spline from sample points (cumulative distance to elevation)
+x_positions = [distances_meter for distances_meter in distances_meters]
+y_positions = [point.elevation / 1000 for point in points]
 cubic_spline = CubicSpline(x_positions, y_positions)
+spline_x_positions = [cubic_spline.get(i)[0] for i in numpy.arange(0, len(x_positions) - 1, 0.1)]
+spline_y_positions = [cubic_spline.get(i)[1] for i in numpy.arange(0, len(y_positions) - 1, 0.1)]
 
-spline_x_positions = [cubic_spline.get(i)[0] for i in numpy.arange(0, len(projected_positions) - 1, 0.25)]
-spline_y_positions = [cubic_spline.get(i)[1] for i in numpy.arange(0, len(projected_positions) - 1, 0.25)]
+x_positions_10_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 10, dtype=int)]
+y_positions_10_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 10, dtype=int)]
+cubic_spline_10_points = CubicSpline(x_positions_10_points, y_positions_10_points)
+spline_x_positions_10_points = [cubic_spline_10_points.get(i)[0] for i in numpy.arange(0, len(x_positions) - 1, 0.1)]
+spline_y_positions_10_points = [cubic_spline_10_points.get(i)[1] for i in numpy.arange(0, len(y_positions) - 1, 0.1)]
 
-spline_x_positions_granular = [cubic_spline.get(i)[0] for i in numpy.arange(0, len(projected_positions) - 1, 0.1)]
-spline_y_positions_granular = [cubic_spline.get(i)[1] for i in numpy.arange(0, len(projected_positions) - 1, 0.1)]
+x_positions_15_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 15, dtype=int)]
+y_positions_15_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 15, dtype=int)]
+cubic_spline_15_points = CubicSpline(x_positions_15_points, y_positions_15_points)
+spline_x_positions_15_points = [cubic_spline_15_points.get(i)[0] for i in numpy.arange(0, len(x_positions_15_points) - 1, 0.1)]
+spline_y_positions_15_points = [cubic_spline_15_points.get(i)[1] for i in numpy.arange(0, len(x_positions_15_points) - 1, 0.1)]
 
-spline_y_positions_granular_error = [y_positions[int(numpy.floor(i))] - cubic_spline.get(i)[1] for i in numpy.arange(0, len(projected_positions) - 1, 0.1)]
+x_positions_20_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 20, dtype=int)]
+y_positions_20_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 20, dtype=int)]
+cubic_spline_20_points = CubicSpline(x_positions_20_points, y_positions_20_points)
+spline_x_positions_20_points = [cubic_spline_20_points.get(i)[0] for i in numpy.arange(0, len(x_positions_20_points) - 1, 0.1)]
+spline_y_positions_20_points = [cubic_spline_20_points.get(i)[1] for i in numpy.arange(0, len(x_positions_20_points) - 1, 0.1)]
 
-#axes[1].plot(spline_x_positions_granular, spline_y_positions_granular_error, linestyle="--", linewidth=2, color="red")
-axes[1].plot(spline_x_positions_granular, spline_y_positions_granular, linestyle="--", linewidth=2, color="green")
-axes[1].plot(spline_x_positions, spline_y_positions, linestyle="--", linewidth=2, color="blue")
-axes[1].plot(x_positions, y_positions, linestyle="--", linewidth=2, color="black")
+spline_y_error_20_points = [spline_y_positions[i] - spline_y_positions_20_points[i] for i in range(len(spline_y_positions_20_points))]
+spline_y_error_15_points = [spline_y_positions[i] - spline_y_positions_15_points[i] for i in range(len(spline_y_positions_15_points))]
+spline_y_error_10_points = [spline_y_positions[i] - spline_y_positions_10_points[i] for i in range(len(spline_y_positions_10_points))]
+
+line_20 = axes[0].plot(spline_x_positions_20_points, spline_y_positions_20_points, linestyle="--", linewidth=2, color="blue")
+line_20[0].set_label("20 точок")
+line_15 = axes[0].plot(spline_x_positions_15_points, spline_y_positions_15_points, linestyle="--", linewidth=2, color="green")
+line_15[0].set_label("15 точок")
+line_10 = axes[0].plot(spline_x_positions_10_points, spline_y_positions_10_points, linestyle="--", linewidth=2, color="red")
+line_10[0].set_label("10 точок")
+line_full = axes[0].plot(spline_x_positions, spline_y_positions, linestyle="-", linewidth=2, color="black")
+line_full[0].set_label("21 (всі) точка")
+
+axes[0].set_xlabel("Висота (км)")
+axes[0].set_ylabel("Кумулятивна відстань (км)")
+axes[0].set_title("Візуалізація кубічних сплайнів")
+axes[0].legend()
+
+line_error_20 = axes[1].plot(spline_x_positions_20_points, spline_y_error_20_points, linestyle="-", linewidth=2, color="red")
+line_error_20[0].set_label("20 точок")
+line_error_15 = axes[1].plot(spline_x_positions_20_points, spline_y_error_15_points, linestyle="-", linewidth=2, color="green")
+line_error_15[0].set_label("15 точок")
+line_error_10 = axes[1].plot(spline_x_positions_20_points, spline_y_error_10_points, linestyle="-", linewidth=2, color="blue")
+line_error_10[0].set_label("10 точок")
+
+axes[1].set_xlabel("Висота (км)")
+axes[1].set_ylabel("Кумулятивна відстань (км)")
+axes[1].set_title("Візуалізація похибки сплайнів із меншими кількостями точок")
 
 plot.show()
