@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy, matplotlib.pyplot as plot
 import requests
 
@@ -81,9 +83,6 @@ class CubicSpline:
         y = self.a[i_whole] + self.b[i_whole] * dx + self.c[i_whole] * dx*dx + self.d[i_whole] * dx*dx*dx
 
         return x, y
-
-
-
 
 
 class GeographicPosition:
