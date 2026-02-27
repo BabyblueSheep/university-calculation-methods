@@ -5,6 +5,7 @@ import requests
 
 from typing import Final
 
+from matplotlib.lines import Line2D
 from matplotlib.pyplot import tight_layout
 
 
@@ -14,17 +15,19 @@ class CubicSpline:
     @staticmethod
     def thomas_algorithm(alpha_values: list[float], beta_values: list[float], gamma_values: list[float], delta_values: list[float]) -> list[float]:
         """Solves a system of equations using the Thomas algorithm."""
-        a_values = [-1] * len(alpha_values)
-        b_values = [-1] * len(alpha_values)
+        a_values = [0] * len(alpha_values)
+        b_values = [0] * len(alpha_values)
 
-        x_values = [-1] * len(alpha_values)
+        x_values = [0] * len(alpha_values)
 
         a_values[0] = -gamma_values[0] / beta_values[0]
         b_values[0] = delta_values[0] / beta_values[0]
 
         for i in range(1, len(a_values)):
-            a_values[i] = -gamma_values[i] / (alpha_values[i] * a_values[i - 1] + beta_values[i])
-            b_values[i] = (delta_values[i] - alpha_values[i] * b_values[i - 1]) / (alpha_values[i] * a_values[i - 1] + beta_values[i])
+            denominator = alpha_values[i] * a_values[i - 1] + beta_values[i]
+
+            a_values[i] = -gamma_values[i] / denominator
+            b_values[i] = (delta_values[i] - alpha_values[i] * b_values[i - 1]) / denominator
 
         x_values[-1] = b_values[-1]
         for i in range(len(x_values) - 2, -1, -1):
@@ -34,26 +37,21 @@ class CubicSpline:
 
     def __init__(self, x_values: list[float], y_values: list[float]):
         self.x = x_values
-        self.y = y_values
 
-        dx = [x_values[i] - x_values[i - 1] for i in range(1, len(x_values))]
-        dx.append(dx[-1])
-        dy = [y_values[i] - y_values[i - 1] for i in range(1, len(y_values))]
-        dy.append(dy[-1])
+        dx = [x_values[i + 1] - x_values[i] for i in range(0, len(x_values) - 1)]
+        dy = [y_values[i + 1] - y_values[i] for i in range(0, len(y_values) - 1)]
 
-        self.a = [y for y in self.y[:]]
-
-        c_alpha = [-1] * (len(self.a))
-        c_beta =  [-1] * (len(self.a))
-        c_gamma = [-1] * (len(self.a))
-        c_delta = [-1] * (len(self.a))
+        c_alpha = [0] * len(dx)
+        c_beta =  [0] * len(dx)
+        c_gamma = [0] * len(dx)
+        c_delta = [0] * len(dx)
 
         c_alpha[0] = 0
         c_beta[0] = 1
         c_gamma[0] = 0
         c_delta[0] = 0
 
-        for i in range(1, len(c_alpha) - 1):
+        for i in range(1, len(c_alpha)):
             c_alpha[i] = dx[i - 1]
             c_beta[i]  = 2 * (dx[i - 1] + dx[i])
             c_gamma[i] = dx[i]
@@ -63,27 +61,39 @@ class CubicSpline:
 
         self.c = CubicSpline.thomas_algorithm(c_alpha, c_beta, c_gamma, c_delta)
 
+        self.a = [y for y in y_values[:-1]]
         self.d = [(self.c[i + 1] - self.c[i]) / (3 * dx[i]) for i in range(len(self.a) - 1)]
-
+        self.d.append(-self.c[-1] / (3 * dx[-1]))
         self.b = [dy[i] / dx[i] - dx[i] / 3 * (self.c[i + 1] + 2 * self.c[i]) for i in range(len(self.a) - 1)]
+        self.b.append(dy[-1] / dx[-1] - 2 / 3 * dx[-1] * self.c[-1])
 
-    def get(self, i: float) -> tuple[float, float]:
-        """Gets an interpolated coordinate along the spline."""
+    def get_x(self, i: float) -> float:
         if i < 0:
-            i = 0
-        if i > len(self.x) - 2:
-            i = len(self.x) - 2
+            return self.x[0]
+        if i >= len(self.x) - 1:
+            return self.x[-1]
 
         i_whole = int(numpy.floor(i))
         i_fract = i % 1.0
 
         x0 = self.x[i_whole]
         x = x0 + (self.x[i_whole + 1] - x0) * i_fract
+
+        return x
+
+    def get_y(self, x: float) -> float:
+        i = len(self.x) - 2
+        while i > 0:
+            if self.x[i] < x:
+                break
+            i -= 1
+
+        x0 = self.x[i]
         dx = x - x0
 
-        y = self.a[i_whole] + self.b[i_whole] * dx + self.c[i_whole] * dx*dx + self.d[i_whole] * dx*dx*dx
+        y = self.a[i] + self.b[i] * dx + self.c[i] * dx*dx + self.d[i] * dx*dx*dx
 
-        return x, y
+        return y
 
 class GeographicPosition:
     """Represents a position on Earth using a geographic coordinate system."""
@@ -106,13 +116,6 @@ class GeographicPosition:
     def haversine_distance_kilometers(first: GeographicPosition, second: GeographicPosition):
         """Returns the haversine distance between two points in kilometers."""
         return GeographicPosition.haversine_angle(first, second) * GeographicPosition.EARTH_RADIUS_KILOMETERS
-
-    def project_mercator(self):
-        scale = 1
-        longitude_central_meridian = 0
-        x = self.longitude - longitude_central_meridian
-        y = numpy.log(numpy.tan(numpy.pi / 4 + self.latitude / 2))
-        return scale * x, scale * y
 
 
 
@@ -155,57 +158,50 @@ print(f"Total energy used during ascent: {energy / 1000} kJ")
 print(f"Total energy used during ascent: {energy / 4184} calories")
 
 # Calculate a cubic spline from sample points (cumulative distance to elevation)
+def plot_spline(spline: CubicSpline, color: str) -> list[Line2D]:
+    subpoint_amount = 100
+    spline_x_positions = [spline.get_x(i) for i in numpy.linspace(0, len(spline.x) - 1, subpoint_amount)]
+    spline_y_positions = [spline.get_y(x) for x in spline_x_positions]
+    return axes[0].plot(spline_x_positions, spline_y_positions, linestyle="-", linewidth=2, color=color)
+
+def plot_splines_error(spline_one: CubicSpline, spline_two: CubicSpline, color: str) -> list[Line2D]:
+    subpoint_amount = 100
+    spline_x_error = [spline_one.get_x(i) for i in numpy.linspace(0, len(spline_one.x) - 1, subpoint_amount)]
+    spline_y_error = [numpy.abs(spline_one.get_y(x) - spline_two.get_y(x)) for x in spline_x_error]
+    return axes[1].plot(spline_x_error, spline_y_error, linestyle="-", linewidth=2, color=color)
+
 x_positions = [distances_meter for distances_meter in distances_meters]
 y_positions = [point.elevation / 1000 for point in points]
 cubic_spline = CubicSpline(x_positions, y_positions)
-spline_x_positions = [cubic_spline.get(i)[0] for i in numpy.arange(0, len(x_positions) - 1, 0.1)]
-spline_y_positions = [cubic_spline.get(i)[1] for i in numpy.arange(0, len(y_positions) - 1, 0.1)]
+plot_spline(cubic_spline, "black")[0].set_label("21 (всі) точка")
 
 x_positions_10_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 10, dtype=int)]
 y_positions_10_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 10, dtype=int)]
 cubic_spline_10_points = CubicSpline(x_positions_10_points, y_positions_10_points)
-spline_x_positions_10_points = [cubic_spline_10_points.get(i)[0] for i in numpy.arange(0, len(x_positions) - 1, 0.1)]
-spline_y_positions_10_points = [cubic_spline_10_points.get(i)[1] for i in numpy.arange(0, len(y_positions) - 1, 0.1)]
+plot_spline(cubic_spline_10_points, "red")[0].set_label("10 точок")
 
 x_positions_15_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 15, dtype=int)]
 y_positions_15_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 15, dtype=int)]
 cubic_spline_15_points = CubicSpline(x_positions_15_points, y_positions_15_points)
-spline_x_positions_15_points = [cubic_spline_15_points.get(i)[0] for i in numpy.arange(0, len(x_positions_15_points) - 1, 0.1)]
-spline_y_positions_15_points = [cubic_spline_15_points.get(i)[1] for i in numpy.arange(0, len(x_positions_15_points) - 1, 0.1)]
+plot_spline(cubic_spline_15_points, "green")[0].set_label("15 точок")
 
 x_positions_20_points = [x_positions[i] for i in numpy.linspace(0, len(x_positions) - 1, 20, dtype=int)]
 y_positions_20_points = [y_positions[i] for i in numpy.linspace(0, len(y_positions) - 1, 20, dtype=int)]
 cubic_spline_20_points = CubicSpline(x_positions_20_points, y_positions_20_points)
-spline_x_positions_20_points = [cubic_spline_20_points.get(i)[0] for i in numpy.arange(0, len(x_positions_20_points) - 1, 0.1)]
-spline_y_positions_20_points = [cubic_spline_20_points.get(i)[1] for i in numpy.arange(0, len(x_positions_20_points) - 1, 0.1)]
-
-spline_y_error_20_points = [spline_y_positions[i] - spline_y_positions_20_points[i] for i in range(len(spline_y_positions_20_points))]
-spline_y_error_15_points = [spline_y_positions[i] - spline_y_positions_15_points[i] for i in range(len(spline_y_positions_15_points))]
-spline_y_error_10_points = [spline_y_positions[i] - spline_y_positions_10_points[i] for i in range(len(spline_y_positions_10_points))]
-
-line_20 = axes[0].plot(spline_x_positions_20_points, spline_y_positions_20_points, linestyle="--", linewidth=2, color="blue")
-line_20[0].set_label("20 точок")
-line_15 = axes[0].plot(spline_x_positions_15_points, spline_y_positions_15_points, linestyle="--", linewidth=2, color="green")
-line_15[0].set_label("15 точок")
-line_10 = axes[0].plot(spline_x_positions_10_points, spline_y_positions_10_points, linestyle="--", linewidth=2, color="red")
-line_10[0].set_label("10 точок")
-line_full = axes[0].plot(spline_x_positions, spline_y_positions, linestyle="-", linewidth=2, color="black")
-line_full[0].set_label("21 (всі) точка")
+plot_spline(cubic_spline_20_points, "blue")[0].set_label("20 точок")
 
 axes[0].set_xlabel("Висота (км)")
 axes[0].set_ylabel("Кумулятивна відстань (км)")
 axes[0].set_title("Візуалізація кубічних сплайнів")
 axes[0].legend()
 
-line_error_20 = axes[1].plot(spline_x_positions_20_points, spline_y_error_20_points, linestyle="-", linewidth=2, color="red")
-line_error_20[0].set_label("20 точок")
-line_error_15 = axes[1].plot(spline_x_positions_20_points, spline_y_error_15_points, linestyle="-", linewidth=2, color="green")
-line_error_15[0].set_label("15 точок")
-line_error_10 = axes[1].plot(spline_x_positions_20_points, spline_y_error_10_points, linestyle="-", linewidth=2, color="blue")
-line_error_10[0].set_label("10 точок")
+plot_splines_error(cubic_spline, cubic_spline_10_points, "red")[0].set_label("10 точок")
+plot_splines_error(cubic_spline, cubic_spline_15_points, "green")[0].set_label("15 точок")
+plot_splines_error(cubic_spline, cubic_spline_20_points, "blue")[0].set_label("20 точок")
 
 axes[1].set_xlabel("Висота (км)")
 axes[1].set_ylabel("Кумулятивна відстань (км)")
 axes[1].set_title("Візуалізація похибки сплайнів із меншими кількостями точок")
+axes[1].legend()
 
 plot.show()
