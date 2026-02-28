@@ -41,7 +41,7 @@ def finite_difference(y_values: list[float], t: int, order: int) -> float:
 def shift_operator(y_values, t: int) -> float:
     return y_values[t + 1]
 
-def factorial_polynomial(x_values)
+def factorial_polynomial(x_values):
     pass
 
 
