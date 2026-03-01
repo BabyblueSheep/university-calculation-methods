@@ -29,20 +29,26 @@ def newton_interpolation_polynomial(x_values: list[float], y_values: list[float]
 
 
 
-def difference_operator(y_values: list[float], t: int) -> float:
-    return y_values[t + 1] - y_values[t]
+def get_t(x_values: list[float], i: int) -> float:
+    return (x_values[i] - x_values[0]) / (x_values[1] - x_values[0])
 
-def finite_difference(y_values: list[float], t: int, order: int) -> float:
+def finite_difference(y_values: list[float], i: int, order: int):
     end_value = 0
     for k in range(order + 1):
-        end_value += (math.factorial(order) / (math.factorial(k) * math.factorial((order - k)))) * math.pow(-1, order - k) * y_values[t + k]
+        end_value += math.pow(-1, order - k) * (math.factorial(order) /(math.factorial(k) * math.factorial(order - k))) * y_values[i + k]
     return end_value
 
-def shift_operator(y_values, t: int) -> float:
-    return y_values[t + 1]
+def falling_factorial(t: float, order: int) -> float:
+    end_value = 1
+    for i in range(order):
+        end_value *= (t - i)
+    return end_value
 
-def factorial_polynomial(x_values):
-    pass
+def factorial_polynomial(t: float, y_values: list[float]) -> float:
+    end_value = 0
+    for k in range(len(y_values)):
+        end_value += y_values[0] * finite_difference(y_values, i, k) / math.factorial(k) * falling_factorial(t, k)
+    return end_value
 
 
 
@@ -65,6 +71,17 @@ for i in range(len(requests_per_second)):
     print(f"Відсоток використання CPU при RPS {requests_per_second[i]}: {cpu_power[i]}%")
 
 print(f"Відсоток використання CPU при RPS {600}: {newton_interpolation_polynomial(requests_per_second, cpu_power, 600)}%")
+
+requests_per_second_20_points = [-1] * 21
+cpu_power_20_points = [-1] * 21
+
+for i in range(21):
+    requests_per_second_20_points[i] = requests_per_second[0] + (requests_per_second[-1] - requests_per_second[0]) * i / 20
+#for t in numpy.linspace(0, len(cpu_power), 20):
+    #cpu_power_20_points[i] = factorial_polynomial(t, cpu_power)
+
+print(requests_per_second)
+print(requests_per_second_20_points)
 
 figure, axes = plot.subplots(nrows=1, ncols=2, tight_layout=True)
 
