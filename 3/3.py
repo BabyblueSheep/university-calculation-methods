@@ -84,7 +84,10 @@ with open("input.csv", 'r', newline='') as file:
 months = numpy.array(months)
 temperatures = numpy.array(temperatures)
 
-max_degree = 10
+print(f"Місяці: {months}")
+print(f"Температури: {temperatures}")
+
+max_degree = 32
 variances = []
 for degree in range(max_degree):
     a_matrix = form_matrix(months, degree)
@@ -93,8 +96,38 @@ for degree in range(max_degree):
     approximate_y_values = calculate_polynomial(months, coefficients)
     variance = get_variance(temperatures, approximate_y_values)
     variances.append(variance)
-optimal_m = numpy.argmin(numpy.array(variances)) + 1
+optimal_m = numpy.argmin(numpy.array(variances))
 optimal_m = optimal_m.astype(int)
+
+def predict_temperatures():
+    normalized_months = (months - months.min()) / (months.max() - months.min())
+    normalized_temperatures = (temperatures - temperatures.min()) / (temperatures.max() - temperatures.min())
+
+    max_degree = 32
+    variances = []
+    for degree in range(max_degree):
+        a_matrix = form_matrix(normalized_months, degree)
+        b_vector = form_vector(normalized_months, normalized_temperatures, degree)
+        coefficients = gaussian_method(a_matrix, b_vector)
+        approximate_y_values = calculate_polynomial(normalized_months, coefficients)
+        variance = get_variance(normalized_temperatures, approximate_y_values)
+        variances.append(variance)
+    optimal_m = numpy.argmin(numpy.array(variances))
+    optimal_m = optimal_m.astype(int)
+
+    a_matrix = form_matrix(normalized_months, optimal_m)
+    b_vector = form_vector(normalized_months, normalized_temperatures, optimal_m)
+    coefficients = gaussian_method(a_matrix, b_vector)
+
+    future_months = numpy.array([61, 62, 63])
+    normalized_future_months = (future_months - future_months.min()) / (future_months.max() - future_months.min())
+    normalized_future_temperatures = calculate_polynomial(normalized_future_months, coefficients)
+    future_temperatures = normalized_future_temperatures * (temperatures.max() - temperatures.min()) + temperatures.min()
+
+    print(f"Майбутні місяці: {future_months}")
+    print(f"Майбутні температури (при степені {optimal_m}): {future_temperatures}")
+
+predict_temperatures()
 
 figure, axes = plot.subplots(nrows=2, ncols=2, tight_layout=True)
 
@@ -103,9 +136,6 @@ def plot_polynomial_approximate(degree: int, axis: int, color: tuple[float, floa
     b_vector = form_vector(months, temperatures, degree)
     coefficients = gaussian_method(a_matrix, b_vector)
     approximate_temperatures = calculate_polynomial(months, coefficients)
-
-    future_months = numpy.array([25, 26, 27])
-    future_temperatures = calculate_polynomial(future_months, coefficients)
 
     error = temperatures - approximate_temperatures
 
