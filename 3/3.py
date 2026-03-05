@@ -160,22 +160,22 @@ for i in range(1, 10 + 1):
 axes[0, 0].set_xlabel("Місяць (к-сть)")
 axes[0, 0].set_ylabel("Температура (°C)")
 axes[0, 0].set_title("Оригінальні дані + многочлен з оптимальним степенем")
-axes[0, 0].legend()
+#axes[0, 0].legend()
 
 axes[1, 0].set_xlabel("Місяць (к-сть)")
 axes[1, 0].set_ylabel("Температура (°C)")
 axes[1, 0].set_title("Оригінальні дані + різні степені")
-axes[1, 0].legend()
+#axes[1, 0].legend()
 
 axes[0, 1].set_xlabel("Місяць (к-сть)")
 axes[0, 1].set_ylabel("Температура (°C)")
 axes[0, 1].set_title("Похибка многочлена з оптимальним степенем")
-axes[0, 1].legend()
+#axes[0, 1].legend()
 
 axes[1, 1].set_xlabel("Місяць (к-сть)")
 axes[1, 1].set_ylabel("Температура (°C)")
 axes[1, 1].set_title("Похибки многочлен з різними степенями")
-axes[1, 1].legend()
+#axes[1, 1].legend()
 
 figure.suptitle("Візуалізація я алгебраїчних многочленів найкращого квадратичного наближення методом найменших квадратів")
 

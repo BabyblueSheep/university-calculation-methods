@@ -29,14 +29,10 @@ def newton_interpolation_polynomial(x_values: list[float], y_values: list[float]
 
 
 
-def get_t(x_values: list[float], i: int) -> float:
-    return (x_values[i] - x_values[0]) / (x_values[1] - x_values[0])
-
 def finite_difference(y_values: list[float], i: int, order: int):
-    end_value = 0
-    for k in range(order + 1):
-        end_value += math.pow(-1, order - k) * (math.factorial(order) /(math.factorial(k) * math.factorial(order - k))) * y_values[i + k]
-    return end_value
+    if order == 0:
+        return y_values[i]
+    return finite_difference(y_values, i + 1, order - 1) - finite_difference(y_values, i, order - 1)
 
 def falling_factorial(t: float, order: int) -> float:
     end_value = 1
@@ -44,10 +40,10 @@ def falling_factorial(t: float, order: int) -> float:
         end_value *= (t - i)
     return end_value
 
-def factorial_polynomial(t: float, y_values: list[float]) -> float:
+def factorial_polynomial(t: float, y_values: list[float], n: int) -> float:
     end_value = 0
-    for k in range(len(y_values)):
-        end_value += y_values[0] * finite_difference(y_values, i, k) / math.factorial(k) * falling_factorial(t, k)
+    for k in range(n):
+        end_value += finite_difference(y_values, 0, k) / math.factorial(k) * falling_factorial(t, k)
     return end_value
 
 
@@ -72,24 +68,18 @@ for i in range(len(requests_per_second)):
 
 print(f"Відсоток використання CPU при RPS {600}: {newton_interpolation_polynomial(requests_per_second, cpu_power, 600)}%")
 
-requests_per_second_20_points = [-1] * 21
-cpu_power_20_points = [-1] * 21
-
-for i in range(21):
-    requests_per_second_20_points[i] = requests_per_second[0] + (requests_per_second[-1] - requests_per_second[0]) * i / 20
-#for t in numpy.linspace(0, len(cpu_power), 20):
-    #cpu_power_20_points[i] = factorial_polynomial(t, cpu_power)
-
-print(requests_per_second)
-print(requests_per_second_20_points)
+cpu_power_factorial = [factorial_polynomial(i, cpu_power, 5) for i in range(len(cpu_power))]
 
 figure, axes = plot.subplots(nrows=1, ncols=2, tight_layout=True)
 
 axes[0].plot(requests_per_second, cpu_power, color="blue", linestyle="", marker="o")
+axes[1].plot(requests_per_second, cpu_power, color="blue", linestyle="", marker="o")
 
 interpolated_x = numpy.linspace(requests_per_second[0], requests_per_second[-1], 128)
 interpolated_y = [newton_interpolation_polynomial(requests_per_second, cpu_power, x) for x in interpolated_x]
 
 axes[0].plot(interpolated_x, interpolated_y, color="red")
+
+axes[1].plot(requests_per_second, cpu_power_factorial, color="red")
 
 plot.show()
