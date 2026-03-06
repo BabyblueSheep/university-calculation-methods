@@ -98,17 +98,32 @@ print(f"Відсоток використання CPU при RPS {600} (факт
 
 figure, axes = plot.subplots(nrows=3, ncols=2, tight_layout=True)
 
+for i in range(3):
+    for j in range(2):
+        if i == 0:
+            axes[i, j].set_xlabel("Запити за секунду")
+        else:
+            axes[i, j].set_xlabel("Запити за секунду (нормалізовані)")
+        axes[i, j].set_ylabel("Використання CPU")
+
 requests_per_second_granular = numpy.linspace(requests_per_second[0], requests_per_second[-1], 128)
 
 
 newton_coefficients = newton_divided_differences_coefficients(requests_per_second, cpu_power)
 cpu_power_newton_polynomial = [newton_interpolation_polynomial_coefficients(x, requests_per_second, newton_coefficients) for x in requests_per_second_granular]
 
-axes[0, 0].plot(requests_per_second_granular, cpu_power_newton_polynomial, color="red", linestyle="-")
-axes[0, 0].plot(requests_per_second, cpu_power, color="blue", linestyle="", marker="o")
+axes[0, 0].plot(requests_per_second_granular, cpu_power_newton_polynomial, color="red", linestyle="-")[0].set_label("Інтерполяційний многочлен Ньютона")
+axes[0, 0].plot(requests_per_second, cpu_power, color="blue", linestyle="", marker="o")[0].set_label("Дані точки")
+
+axes[0, 0].set_title("Інтерполяційний многочлен Ньютона")
+axes[0, 0].legend()
+
 
 
 cpu_power_newton_factorial = [factorial_polynomial(x, cpu_power, len(cpu_power)) for x in numpy.linspace(0, len(cpu_power), 128)]
+
+axes[0, 1].plot(requests_per_second, cpu_power, color="black", linestyle="-")
+axes[0, 1].plot(requests_per_second, cpu_power, color="black", linestyle="", marker="o")[0].set_label("Дані точки")
 
 for order in range(len(cpu_power)):
     cpu_power_factorial = [factorial_polynomial(i, cpu_power, order + 1) for i in range(len(cpu_power))]
@@ -116,19 +131,21 @@ for order in range(len(cpu_power)):
     color = matplotlib.colors.hsv_to_rgb((order / 8, 1, 1))
 
     axes[0, 1].plot(requests_per_second, cpu_power_factorial, color=color, linestyle="--")
-    axes[0, 1].plot(requests_per_second, cpu_power_factorial, color=color, linestyle="", marker="o")
+    axes[0, 1].plot(requests_per_second, cpu_power_factorial, color=color, linestyle="", marker="o")[0].set_label(f"Інтерпольовані точки (порядок {order})")
 
-axes[0, 1].plot(requests_per_second, cpu_power, color="black", linestyle="--")
-axes[0, 1].plot(requests_per_second, cpu_power, color="black", linestyle="", marker="o")
+axes[0, 1].set_title("Факторіальні многочлени")
+axes[0, 1].legend()
+
+
 
 x_values_granular = numpy.linspace(0, 1, 128)
 y_values_real = numpy.array([numpy.sin(x * numpy.pi * 5) for x in x_values_granular])
 
-axes[1, 0].plot(x_values_granular, y_values_real, color="black", linestyle="-")
-axes[2, 0].plot(x_values_granular, y_values_real, color="black", linestyle="-")
+axes[1, 0].plot(x_values_granular, y_values_real, color="black", linestyle="-")[0].set_label("Дані точки")
+axes[2, 0].plot(x_values_granular, y_values_real, color="black", linestyle="-")[0].set_label("Дані точки")
 
 def plot_points(point_amount: int):
-    color = matplotlib.colors.hsv_to_rgb((point_amount / 50, 1, 1))
+    color = matplotlib.colors.hsv_to_rgb((point_amount / 100, 1, 1))
 
     x_values = numpy.linspace(0, 1, point_amount)
     y_values = numpy.sin(numpy.linspace(0, 1, point_amount) * numpy.pi * 5)
@@ -137,20 +154,28 @@ def plot_points(point_amount: int):
     y_values_polynomial = [newton_interpolation_polynomial_coefficients(x, x_values.tolist(), point_newton_coefficients) for x in x_values_granular]
 
     axes[1, 0].plot(x_values_granular, y_values_polynomial, color=color, linestyle="--")
-    axes[1, 0].plot(x_values, y_values, color=color, linestyle="", marker="o")
+    axes[1, 0].plot(x_values, y_values, color=color, linestyle="", marker="o")[0].set_label(f"Точки ({point_amount} точок)")
 
-    axes[1, 1].plot(x_values_granular, numpy.abs(y_values_real - numpy.array(y_values_polynomial)), color=color, linestyle="--")
+    axes[1, 1].plot(x_values_granular, numpy.abs(y_values_real - numpy.array(y_values_polynomial)), color=color, linestyle="-")[0].set_label(f"Похибка ({point_amount} точок)")
 
     y_values_factorial = [factorial_polynomial(i, y_values.tolist(), len(y_values)) for i in numpy.linspace(0, len(y_values) - 1, 128)]
-    print(y_values_factorial)
 
     axes[2, 0].plot(x_values_granular, y_values_factorial, color=color, linestyle="--")
-    axes[2, 0].plot(x_values, y_values, color=color, linestyle="", marker="o")
+    axes[2, 0].plot(x_values, y_values, color=color, linestyle="", marker="o")[0].set_label(f"Точки ({point_amount} точок)")
 
-    axes[2, 1].plot(x_values_granular, numpy.abs(y_values_real - numpy.array(y_values_factorial)), color=color, linestyle="--")
+    axes[2, 1].plot(x_values_granular, numpy.abs(y_values_real - numpy.array(y_values_factorial)), color=color, linestyle="-")[0].set_label(f"Похибка ({point_amount} точок)")
 
 plot_points(20)
 plot_points(10)
 plot_points(5)
+
+axes[1, 0].set_title("Інтерполяційні многочлени Ньютона із різними к-стями точок")
+axes[1, 0].legend()
+axes[1, 1].set_title("Похибки інтерполяційних многочленів Ньютона із різними к-стями точок")
+axes[1, 1].legend()
+axes[2, 0].set_title("Факторіальні многочлени із різними к-стями точок")
+axes[2, 0].legend()
+axes[2, 1].set_title("Похибки факторіальних многочленів із різними к-стями точок")
+axes[2, 1].legend()
 
 plot.show()
