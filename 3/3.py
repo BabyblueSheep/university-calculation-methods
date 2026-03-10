@@ -2,7 +2,10 @@ import csv
 
 import numpy, matplotlib.pyplot as plot, matplotlib.colors
 
-from typing import TextIO
+from typing import TextIO, Any
+
+from matplotlib.lines import lineStyles
+from numpy import floating
 
 
 def form_matrix(x_values: numpy.ndarray, m: int) -> numpy.ndarray:
@@ -60,7 +63,7 @@ def calculate_polynomial(x_values: numpy.ndarray, coefficients: numpy.ndarray) -
 
     return y_values
 
-def get_variance(true_y_values: numpy.ndarray, approximate_y_values: numpy.ndarray) -> float:
+def get_variance(true_y_values: numpy.ndarray, approximate_y_values: numpy.ndarray) -> floating[Any]:
     return numpy.average(numpy.power(true_y_values - approximate_y_values, 2))
 
 
@@ -87,7 +90,9 @@ temperatures = numpy.array(temperatures)
 print(f"Місяці: {months}")
 print(f"Температури: {temperatures}")
 
-max_degree = 32
+
+
+max_degree = 16
 variances = []
 for degree in range(max_degree):
     a_matrix = form_matrix(months, degree)
@@ -103,7 +108,7 @@ def predict_temperatures():
     normalized_months = (months - months.min()) / (months.max() - months.min())
     normalized_temperatures = (temperatures - temperatures.min()) / (temperatures.max() - temperatures.min())
 
-    max_degree = 32
+    max_degree = 16
     variances = []
     for degree in range(max_degree):
         a_matrix = form_matrix(normalized_months, degree)
@@ -129,9 +134,42 @@ def predict_temperatures():
 
 predict_temperatures()
 
-figure, axes = plot.subplots(nrows=2, ncols=2, tight_layout=True)
 
-def plot_polynomial_approximate(degree: int, axis: int, color: tuple[float, float, float] | None = None):
+
+figure, axes = plot.subplots(nrows=1, ncols=3, tight_layout=True)
+
+a_matrix = form_matrix(months, optimal_m)
+b_vector = form_vector(months, temperatures, optimal_m)
+coefficients = gaussian_method(a_matrix, b_vector)
+optimal_approximate_y = calculate_polynomial(months, coefficients)
+
+axes[0].plot(months, temperatures, color="red", linestyle="--", linewidth=2)[0].set_label("Оригінальні температури")
+axes[0].plot(months, optimal_approximate_y, color="blue", linestyle="--", linewidth=2)[0].set_label(f"Приблизні температури (при степені {optimal_m})")
+axes[1].plot(months, numpy.abs(optimal_approximate_y - temperatures), color="black", linestyle="-", linewidth=2)[0].set_label(f"Похибка температур (при степені {optimal_m})")
+
+axes[2].plot([i for i in range(len(variances))], variances)
+
+axes[0].set_xlabel("Місяць (к-сть)")
+axes[0].set_ylabel("Температура (°C)")
+axes[0].set_title("Оригінальні дані + многочлен з оптимальним степенем")
+axes[0].legend()
+
+axes[1].set_xlabel("Місяць (к-сть)")
+axes[1].set_ylabel("Температура (°C)")
+axes[1].set_title("Похибка факторіального многочлена")
+axes[1].legend()
+
+axes[2].set_xlabel("Cтепінь (к-сть)")
+axes[2].set_ylabel("Дисперсія (°C)")
+axes[2].set_title("Залежність величини дисперсії від степені многочлена")
+
+figure.suptitle("Візуалізація алгебраїчних многочленів найкращого квадратичного наближення методом найменших квадратів")
+
+plot.show()
+
+figure, axes = plot.subplots(nrows=1, ncols=2, tight_layout=True)
+
+def plot_polynomial_approximate(degree: int, color: tuple[float, float, float] | None = None):
     a_matrix = form_matrix(months, degree)
     b_vector = form_vector(months, temperatures, degree)
     coefficients = gaussian_method(a_matrix, b_vector)
@@ -142,41 +180,27 @@ def plot_polynomial_approximate(degree: int, axis: int, color: tuple[float, floa
     if color is None:
         color = matplotlib.colors.hsv_to_rgb(((degree / 12) % 1, 1, 1))
 
-    axes[axis, 0].plot(months, approximate_temperatures, color=color, linestyle="--")[0].set_label(f"Приблизні температури (при степені {degree})")
+    axes[0].plot(months, approximate_temperatures, color=color, linestyle="--")[0].set_label(f"Приблизні температури (при степені {degree})")
 
-    axes[axis, 1].plot(months, numpy.abs(error), color=color, linestyle="--")[0].set_label(f"Похибка (при степені {degree})")
-
-
+    axes[1].plot(months, numpy.abs(error), color=color, linestyle="--")[0].set_label(f"Похибка (при степені {degree})")
 
 
 
-axes[0, 0].plot(months, temperatures, color="black", linestyle="-", linewidth=2)[0].set_label("Оригінальні температури")
-axes[1, 0].plot(months, temperatures, color="black", linestyle="-", linewidth=2)[0].set_label("Оригінальні температури")
-
-plot_polynomial_approximate(optimal_m, 0, (1, 0, 0))
+plot_polynomial_approximate(optimal_m, (1, 0, 0))
 for i in range(1, 10 + 1):
-    plot_polynomial_approximate(i, 1)
+    plot_polynomial_approximate(i)
 
-axes[0, 0].set_xlabel("Місяць (к-сть)")
-axes[0, 0].set_ylabel("Температура (°C)")
-axes[0, 0].set_title("Оригінальні дані + многочлен з оптимальним степенем")
-#axes[0, 0].legend()
 
-axes[1, 0].set_xlabel("Місяць (к-сть)")
-axes[1, 0].set_ylabel("Температура (°C)")
-axes[1, 0].set_title("Оригінальні дані + різні степені")
-#axes[1, 0].legend()
+axes[0].set_xlabel("Місяць (к-сть)")
+axes[0].set_ylabel("Температура (°C)")
+axes[0].set_title("Похибка многочлена з оптимальним степенем")
+axes[0].legend()
 
-axes[0, 1].set_xlabel("Місяць (к-сть)")
-axes[0, 1].set_ylabel("Температура (°C)")
-axes[0, 1].set_title("Похибка многочлена з оптимальним степенем")
-#axes[0, 1].legend()
+axes[1].set_xlabel("Місяць (к-сть)")
+axes[1].set_ylabel("Температура (°C)")
+axes[1].set_title("Похибки многочлен з різними степенями")
+axes[1].legend()
 
-axes[1, 1].set_xlabel("Місяць (к-сть)")
-axes[1, 1].set_ylabel("Температура (°C)")
-axes[1, 1].set_title("Похибки многочлен з різними степенями")
-#axes[1, 1].legend()
-
-figure.suptitle("Візуалізація я алгебраїчних многочленів найкращого квадратичного наближення методом найменших квадратів")
+figure.suptitle("Візуалізація алгебраїчних многочленів найкращого квадратичного наближення методом найменших квадратів")
 
 plot.show()
