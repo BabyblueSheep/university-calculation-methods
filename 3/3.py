@@ -124,7 +124,7 @@ def predict_temperatures():
     b_vector = form_vector(normalized_months, normalized_temperatures, optimal_m)
     coefficients = gaussian_method(a_matrix, b_vector)
 
-    future_months = numpy.array([61, 62, 63])
+    future_months = numpy.array([25, 26, 27])
     normalized_future_months = (future_months - future_months.min()) / (future_months.max() - future_months.min())
     normalized_future_temperatures = calculate_polynomial(normalized_future_months, coefficients)
     future_temperatures = normalized_future_temperatures * (temperatures.max() - temperatures.min()) + temperatures.min()
