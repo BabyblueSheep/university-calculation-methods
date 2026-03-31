@@ -1,5 +1,6 @@
 import math
 import matplotlib.pyplot as plot
+import matplotlib.colors
 
 import numpy
 
@@ -25,18 +26,18 @@ def soil_moisture_derivative_rombergs_error(t, difference):
     return abs(soil_moisture_derivative_rombergs(t, difference) - soil_moisture_derivative_true(t))
 
 def soil_moisture_derivative_aitkens(t, difference):
-    derivative_quadruple = soil_moisture_derivative_central_difference(t, difference * 4)
-    derivative_double = soil_moisture_derivative_central_difference(t, difference * 2)
-    derivative_base = soil_moisture_derivative_central_difference(t, difference)
+    dh4 = soil_moisture_derivative_central_difference(t, difference * 4)
+    dh2 = soil_moisture_derivative_central_difference(t, difference * 2)
+    dh = soil_moisture_derivative_central_difference(t, difference)
 
-    return derivative_quadruple - pow(derivative_double - derivative_quadruple, 2) / (derivative_base - 2 * derivative_double + derivative_quadruple)
+    return dh4 - pow(dh2 - dh4, 2) / (dh - 2 * dh2 + dh4)
 
 def soil_moisture_derivative_aitkens_accuracy_order(t, difference):
     derivative_quadruple = soil_moisture_derivative_central_difference(t, difference * 4)
     derivative_double = soil_moisture_derivative_central_difference(t, difference * 2)
     derivative_base = soil_moisture_derivative_central_difference(t, difference)
 
-    return 1 / math.log(2) * math.log((derivative_base - derivative_double) / (derivative_double - derivative_quadruple))
+    return 1 / math.log(2) * abs(math.log((derivative_base - derivative_double) / (derivative_double - derivative_quadruple)))
 
 def soil_moisture_derivative_aitkens_error(t, difference):
     return abs(soil_moisture_derivative_aitkens(t, difference) - soil_moisture_derivative_true(t))
@@ -72,6 +73,29 @@ axes.set_ylabel("Вологість (M(t))")
 figure.suptitle("Вологість ґрунту")
 
 plot.show()
+
+
+figure, axes = plot.subplots(nrows=1, ncols=1, tight_layout=True)
+
+difference_minimum = -20
+difference_maximum = 1
+step_sizes = []
+errors = []
+for difference_step_size in range(difference_minimum, difference_maximum + 1):
+    error = soil_moisture_derivative_central_difference_error(1, pow(10, difference_step_size))
+
+    step_sizes.append(difference_step_size)
+    errors.append(error)
+
+axes.plot(step_sizes, errors, linestyle='-', marker='o')
+
+axes.set_xlabel("Розмір кроку")
+axes.set_ylabel("Похибка")
+
+figure.suptitle("Залежність розміру кроку від похибки")
+
+plot.show()
+
 
 def plot_derivative(function_to_use, error_function_to_use, algorithm_name):
     axes[0].plot(
