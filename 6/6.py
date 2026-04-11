@@ -57,8 +57,30 @@ def solve_ax_b(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarra
 
     return x_vector
 
-def iterative_refinement(a_matrix, b_vector, x_vector):
-    pass
+def iterative_refinement(
+        a_matrix: numpy.ndarray,
+        b_vector: numpy.ndarray,
+        x_vector_real: numpy.ndarray, x_vector_approximation: numpy.ndarray,
+        error: float
+    ) -> numpy.ndarray:
+
+    iteration_count = 0
+    while True:
+        error_vector_real = x_vector_real - x_vector_approximation
+        discontinuity_vector = b_vector - multiply_matrix_vector(a_matrix, x_vector_approximation)
+
+        error_vector_approximation = solve_ax_b(a_matrix, discontinuity_vector)
+        x_vector_approximation_refined = x_vector_approximation + error_vector_approximation
+
+        if (
+            numpy.all(numpy.abs(error_vector_real) <= error) and
+            numpy.all( numpy.abs(multiply_matrix_vector(a_matrix, x_vector_approximation_refined) - b_vector ) <= error)
+        ) or iteration_count >= 100:
+            return x_vector_approximation_refined
+
+        x_vector_approximation = x_vector_approximation_refined
+
+        iteration_count += 1
 
 
 
@@ -66,10 +88,10 @@ a_matrix = form_random_matrix(100) * 100
 x_vector = numpy.ones(100) * 2.5
 b_vector = multiply_matrix_vector(a_matrix, x_vector)
 
-
-
 x_vector_approximation = solve_ax_b(a_matrix, b_vector)
-
 epsilon = numpy.max(multiply_matrix_vector(a_matrix, x_vector_approximation) - b_vector)
+print(epsilon)
 
+x_vector_refined_approximation = iterative_refinement(a_matrix, b_vector, x_vector_approximation, x_vector_approximation, 10**(-14))
+epsilon = numpy.max(multiply_matrix_vector(a_matrix, x_vector_refined_approximation) - b_vector)
 print(epsilon)
