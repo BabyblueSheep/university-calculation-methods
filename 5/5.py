@@ -112,11 +112,12 @@ plot.show()
 
 
 
+
 figure, axis_difference = plot.subplots(nrows=1, ncols=1, tight_layout=True)
 
 axis_difference.plot(
-    range(10, 1000 + 10, 10),
-    [f_simpsons_error(n, time_start, time_end) for n in range(10, 1000 + 10, 10)],
+    range(100, 1000 + 10, 10),
+    [f_simpsons_error(n, time_start, time_end) for n in range(100, 1000 + 10, 10)],
     color="blue", linestyle="-"
 )
 
@@ -134,6 +135,12 @@ while current_error >= optimal_error:
 
 print(f"Помилка метода Сімпсона при N {n_optimal}: {current_error}")
 
+plot.show()
+
+
+
+
+
 n_o = n_optimal / 10
 n_o = int(n_o // 8 * 8)
 
@@ -141,13 +148,41 @@ print(f"Помилка методом Сімпсона при N {n_o}: {f_simpso
 print(f"Помилка методом Сімпсона & Ромберга при N {n_o}: {f_rombergs_error(n_o, time_start, time_end)}")
 print(f"Помилка методом Сімпсона & Ейткена при N {n_o}: {f_aitkens_error(n_o, time_start, time_end)}")
 
+figure, axis_difference = plot.subplots(nrows=1, ncols=1, tight_layout=True)
+
+axis_difference.plot(
+    range(128, 1000 + 8, 8),
+    [f_simpsons_error(n, time_start, time_end) for n in range(128, 1000 + 8, 8)],
+    color="blue", linestyle="--"
+)[0].set_label("Метод Сімпсона")
+axis_difference.plot(
+    range(128, 1000 + 8, 8),
+    [f_rombergs_error(n, time_start, time_end) for n in range(128, 1000 + 8, 8)],
+    color="red", linestyle="--"
+)[0].set_label("Метод Сімпсона + Ромберга")
+axis_difference.plot(
+    range(128, 1000 + 8, 8),
+    [f_aitkens_error(n, time_start, time_end) for n in range(128, 1000 + 8, 8)],
+    color="green", linestyle="--"
+)[0].set_label("Метод Сімпсона + Ейткена")
+
+axis_difference.set_xlabel("Крок (N)")
+axis_difference.set_ylabel("Помилка (F(t))")
+axis_difference.legend()
+
+figure.suptitle("Залежність помилка метода Сімпсона від розміру крока")
+
 plot.show()
+
+
+
+
 
 figure, axis_adaptive = plot.subplots(nrows=1, ncols=1, tight_layout=True)
 
 axis_adaptive.plot(
-    range(-10, 2 + 1),
-    [numpy.abs(f_adaptive(time_start, time_end, 10**delta_power) - f_integral(time_start, time_end)) for delta_power in range(-10, 2 + 1)],
+    range(-10, -1 + 1),
+    [numpy.abs(f_adaptive(time_start, time_end, 10**delta_power) - f_integral(time_start, time_end)) for delta_power in range(-10, -1 + 1)],
     color="blue", linestyle="-"
 )
 
