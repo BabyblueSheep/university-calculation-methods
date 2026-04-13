@@ -85,7 +85,7 @@ def iterative_refinement(
         error_vector_approximation = solve_lu_b(l_matrix, u_matrix, residual_vector)
 
         if (
-            numpy.all(numpy.abs(error_vector_approximation) <= error) #and
+            numpy.linalg.norm(residual_vector, ord=numpy.inf) <= error #and
             #numpy.all( numpy.abs(multiply_matrix_vector(a_matrix, x_vector_approximation_refined) - b_vector ) <= error)
         ) or iteration_count >= 1000:
             return x_vector_approximation_refined
@@ -103,9 +103,9 @@ b_vector = multiply_matrix_vector(a_matrix, x_vector)
 l_matrix, u_matrix = lu_decomposition(a_matrix)
 
 x_vector_approximation = solve_lu_b(l_matrix, u_matrix, b_vector)
-epsilon = numpy.max(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_approximation) - b_vector))
+epsilon = numpy.linalg.norm(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_approximation) - b_vector), ord=numpy.inf)#numpy.max(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_approximation) - b_vector))
 print(f"Помилка без СЛАР: {epsilon}")
 
 x_vector_refined_approximation = iterative_refinement(a_matrix, b_vector, x_vector_approximation, 10**(-14))
-epsilon = numpy.max(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_refined_approximation) - b_vector))
+epsilon = numpy.linalg.norm(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_refined_approximation) - b_vector), ord=numpy.inf)#numpy.max(numpy.abs(multiply_matrix_vector(a_matrix, x_vector_refined_approximation) - b_vector))
 print(f"Помилка із СЛАР: {epsilon}")
