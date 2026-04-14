@@ -53,7 +53,7 @@ def f_aitkens(n, a, b):
     f_half = f_simpsons(n // 2, a, b)
     f_quart = f_simpsons(n // 4, a, b)
 
-    return (f_half * f_half - f * f_quart) / (2 * f_half - f - f_quart)
+    return (f_half * f_half - f * f_quart) / (2 * f_half - (f + f_quart) )
 
 def f_aitkens_accuracy_order(n, a, b):
     f = f_simpsons(n, a, b)
@@ -76,6 +76,9 @@ def f_adaptive(a, b, delta):
     if numpy.abs(i_1 - i_2) <= delta:
         return i_2
     return f_adaptive(a, (a + b) * 0.5, delta) + f_adaptive((a + b) * 0.5, b, delta)
+
+def f_adaptive_error(a, b, delta):
+    return numpy.abs(f_adaptive(a, b, delta) - f_integral(a, b))
 
 
 
@@ -182,7 +185,7 @@ figure, axis_adaptive = plot.subplots(nrows=1, ncols=1, tight_layout=True)
 
 axis_adaptive.plot(
     range(-10, -1 + 1),
-    [numpy.abs(f_adaptive(time_start, time_end, 10**delta_power) - f_integral(time_start, time_end)) for delta_power in range(-10, -1 + 1)],
+    [f_adaptive_error(time_start, time_end, 10**delta_power) for delta_power in range(-10, -1 + 1)],
     color="blue", linestyle="-"
 )
 
