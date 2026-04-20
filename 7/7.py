@@ -33,7 +33,7 @@ def vector_difference_norm(vector_first: numpy.ndarray, vector_second: numpy.nda
 def matrix_norm(matrix: numpy.ndarray) -> float:
     return numpy.max(numpy.sum(numpy.abs(matrix), axis=1))
 
-def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> numpy.ndarray:
+def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
     size = a_matrix.shape[0]
 
     tau = 0.01 / matrix_norm(a_matrix)
@@ -56,7 +56,7 @@ def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, ep
 
     return x_vector
 
-def jacobi_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> numpy.ndarray:
+def jacobi_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
     size = a_matrix.shape[0]
 
     x_vector = numpy.ones(b_vector.shape)
@@ -78,7 +78,7 @@ def jacobi_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: flo
 
     return x_vector
 
-def seidel_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> numpy.ndarray:
+def seidel_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
     size = a_matrix.shape[0]
 
     x_vector = numpy.ones(b_vector.shape)
@@ -107,13 +107,14 @@ a_matrix = form_random_matrix(100, 10) * 100
 x_vector = form_random_vector(100) * 50 + 5
 b_vector = multiply_matrix_vector(a_matrix, x_vector)
 
-print(vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector)))
+x_vector_approximation = simple_iterative_method(a_matrix, b_vector)
+biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
+print(f"Найбільша помилка (простий метод): {biggest_error}")
 
-x_vector_approximation = simple_iterative_method(a_matrix, b_vector, 10**(-14))
-print(vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation)))
+x_vector_approximation = jacobi_method(a_matrix, b_vector)
+biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
+print(f"Найбільша помилка (метод Якобі): {biggest_error}")
 
-x_vector_approximation = jacobi_method(a_matrix, b_vector, 10**(-14))
-print(vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation)))
-
-x_vector_approximation = seidel_method(a_matrix, b_vector, 10**(-14))
-print(vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation)))
+x_vector_approximation = seidel_method(a_matrix, b_vector)
+biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
+print(f"Найбільша помилка (метод Зейделя): {biggest_error}")
