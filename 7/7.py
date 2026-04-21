@@ -1,6 +1,7 @@
 import numpy
+import time
 
-rng = numpy.random.default_rng()
+rng = numpy.random.default_rng(seed=420)
 
 def form_random_matrix(size: int, scale: float) -> numpy.ndarray:
     matrix = numpy.zeros((size, size))
@@ -33,14 +34,16 @@ def vector_difference_norm(vector_first: numpy.ndarray, vector_second: numpy.nda
 def matrix_norm(matrix: numpy.ndarray) -> float:
     return numpy.max(numpy.sum(numpy.abs(matrix), axis=1))
 
-def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
+def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> tuple[numpy.ndarray, int]:
     size = a_matrix.shape[0]
 
-    tau = 0.01 / matrix_norm(a_matrix)
+    tau = 0.1 / matrix_norm(a_matrix)
 
     x_vector = numpy.ones(b_vector.shape)
 
-    for k in range(10000):
+    iteration = 0
+    while iteration < 5000:
+        iteration += 1
 
         old_x_vector = x_vector.copy()
 
@@ -51,39 +54,44 @@ def simple_iterative_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) ->
 
             x_vector[i] = old_x_vector[i] - tau * matrix_sum + tau * b_vector[i]
 
-        #if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
-        #    break
+        if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
+            break
 
-    return x_vector
+    return x_vector, iteration
 
-def jacobi_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
+def jacobi_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> tuple[numpy.ndarray, int]:
     size = a_matrix.shape[0]
 
     x_vector = numpy.ones(b_vector.shape)
 
-    for k in range(10000):
+    iteration = 0
+    while iteration < 5000:
+        iteration += 1
 
         old_x_vector = x_vector.copy()
 
         for i in range(size):
             matrix_sum = 0
             for j in range(size):
-                matrix_sum += a_matrix[i, j] * old_x_vector[j]
-            matrix_sum -= a_matrix[i, i] * old_x_vector[i]
+                if j != i:
+                    matrix_sum += a_matrix[i, j] * old_x_vector[j]
+            #matrix_sum -= a_matrix[i, i] * old_x_vector[i]
 
             x_vector[i] = (b_vector[i] - matrix_sum) / a_matrix[i, i]
 
-        #if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
-        #    break
+        if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
+            break
 
-    return x_vector
+    return x_vector, iteration
 
-def seidel_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.ndarray:
+def seidel_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray, epsilon: float) -> tuple[numpy.ndarray, int]:
     size = a_matrix.shape[0]
 
     x_vector = numpy.ones(b_vector.shape)
 
-    for k in range(10000):
+    iteration = 0
+    while iteration < 5000:
+        iteration += 1
 
         old_x_vector = x_vector.copy()
 
@@ -97,24 +105,36 @@ def seidel_method(a_matrix: numpy.ndarray, b_vector: numpy.ndarray) -> numpy.nda
 
             x_vector[i] = (b_vector[i] - matrix_sum) / a_matrix[i, i]
 
-        #if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
-        #    break
+        if vector_difference_norm(old_x_vector, x_vector) <= epsilon:
+            break
 
-    return x_vector
+    return x_vector, iteration
 
 
 a_matrix = form_random_matrix(100, 10) * 100
 x_vector = form_random_vector(100) * 50 + 5
 b_vector = multiply_matrix_vector(a_matrix, x_vector)
 
-x_vector_approximation = simple_iterative_method(a_matrix, b_vector)
+#old_time = time.time()
+x_vector_approximation, iteration_count = simple_iterative_method(a_matrix, b_vector, 10**(-14))
+#new_time = time.time()
 biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
 print(f"Найбільша помилка (простий метод): {biggest_error}")
+print(f"Кількість ітерацій (простий метод): {iteration_count}")
+#print(f"Час для розв`язання (простий метод): {new_time - old_time}")
 
-x_vector_approximation = jacobi_method(a_matrix, b_vector)
+#old_time = time.time()
+x_vector_approximation, iteration_count = jacobi_method(a_matrix, b_vector, 10**(-14))
+#new_time = time.time()
 biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
 print(f"Найбільша помилка (метод Якобі): {biggest_error}")
+print(f"Кількість ітерацій (метод Якобі): {iteration_count}")
+#print(f"Час для розв`язання (метод Якобі): {new_time - old_time}")
 
-x_vector_approximation = seidel_method(a_matrix, b_vector)
+#old_time = time.time()
+x_vector_approximation, iteration_count = seidel_method(a_matrix, b_vector, 10**(-14))
+#new_time = time.time()
 biggest_error = vector_difference_norm(b_vector, multiply_matrix_vector(a_matrix, x_vector_approximation))
 print(f"Найбільша помилка (метод Зейделя): {biggest_error}")
+print(f"Кількість ітерацій (метод Зейделя): {iteration_count}")
+#print(f"Час для розв`язання (метод Зейделя): {new_time - old_time}")
