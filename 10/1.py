@@ -78,52 +78,75 @@ plot.show()
 
 figure, axis_optimal_step = plot.subplots(nrows=1, ncols=1, tight_layout=True)
 
-target_x = 3.0
-initial_x = 1.0
+initial_x = 0.1
+
 step_sizes = []
-for step_size in range(6):
+for step_size in range(4):
     step_sizes.append(10**step_size)
     step_sizes.append( (10**step_size + 10**(step_size+1) // 4))
     step_sizes.append( (10**step_size + 10**(step_size+1) // 3))
     step_sizes.append( (10**step_size + 10**(step_size+1) // 2))
 
-smallest_error = 1000
-step_with_smallest_error = -1
-for step_size in step_sizes:
-    error = (numpy.abs
-        (
-            f(target_x) - adams_bashforth(
-                initial_x,
-                f(initial_x),
-                0.1 / step_size,
-                20 * step_size
-            )[1]
-        ))
+target_x_ranges = []
+smallest_errors_for_steps = []
 
-    if error < smallest_error:
-        smallest_error = error
-        step_with_smallest_error = 0.1 / step_size
+for target_x in numpy.arange(0.2, 2 + 0.1, 0.1):
+    smallest_error = 1000
+    step_with_smallest_error = -1
 
-print(f"Оптимальний крок: {step_with_smallest_error} (помилка {smallest_error})")
+    difference = target_x - initial_x
+    target_n = int(10 * difference)
+
+    for step_size in step_sizes:
+        error = (numpy.abs
+            (
+                f(target_x) - adams_bashforth(
+                    initial_x,
+                    f(initial_x),
+                    0.01 / step_size,
+                    target_n * step_size
+                )[1]
+            ))
+
+        if error < smallest_error:
+            smallest_error = error
+            step_with_smallest_error = 0.1 / step_size
+
+    target_x_ranges.append(target_x)
+    smallest_errors_for_steps.append(step_with_smallest_error)
 
 axis_optimal_step.plot(
+    target_x_ranges,
+    smallest_errors_for_steps
+)
+
+axis_optimal_step.set_xlabel("x")
+axis_optimal_step.set_ylabel("Крок")
+
+figure.suptitle("Оптимальний крок для кожного X методом Адамса")
+
+plot.show()
+
+figure, axis_error_relation = plot.subplots(nrows=1, ncols=1, tight_layout=True)
+
+axis_error_relation.plot(
     [0.1 / step_size for step_size in step_sizes],
     [
         numpy.abs
         (
-            f(target_x) - adams_bashforth(
+            f(1) - adams_bashforth(
                 initial_x,
                 f(initial_x),
-                0.1 / step_size,
-                20 * step_size
+                0.01 / step_size,
+                90 * step_size
             )[1]
         )
         for step_size in step_sizes
     ]
 )
 
-axis_optimal_step.set_xlabel("Крок")
-axis_optimal_step.set_ylabel("Помилка (f(t))")
+axis_error_relation.set_xlabel("Крок")
+axis_error_relation.set_ylabel("Помилка (f(t))")
 
 figure.suptitle("Залежність помилка метода Адамса від розміру крока")
 
